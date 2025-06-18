@@ -94,7 +94,7 @@ public class GamificationEngine implements RewardSystem {
         // Return the badge name of the current user or null if no users exist
         if (!users.isEmpty()) {
             Badge badge = users.get(users.size() - 1).getBadge();
-            return badge != null ? badge.getName() : null;
+            return badge != null ? badge.getBadgeName() : null;
         }
         return null;
     }
