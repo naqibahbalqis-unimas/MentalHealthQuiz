@@ -82,8 +82,8 @@ public class LearningModule implements ContentProvider {
             return;
         }
         ImageIcon icon = new ImageIcon(pages[currentPage]);
-        Image img = icon.getImage().getScaledInstance(500, 500, Image.SCALE_SMOOTH);
-        imageLabel.setIcon(new ImageIcon(img));
+        // Display image at natural resolution (no compression)
+        imageLabel.setIcon(icon);
         progressBar.setValue(currentPage);
         prevButton.setEnabled(currentPage > 0);
         if (currentPage == totalPages - 1) {

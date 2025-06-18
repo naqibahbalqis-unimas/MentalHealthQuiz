@@ -80,8 +80,8 @@ public class GamificationGUI {
                 resultArea.setText(sb.toString());
 
                 ImageIcon icon = new ImageIcon(currentUser.getBadgeIconPath());
-                Image img = icon.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
-                badgeImage.setIcon(new ImageIcon(img));
+                // Display image at natural resolution (no compression)
+                badgeImage.setIcon(icon);
             }
         });
 
@@ -98,8 +98,8 @@ public class GamificationGUI {
         bannerLabel.setHorizontalAlignment(SwingConstants.CENTER);
         String bannerPath = "assets" + File.separator + "badges" + File.separator + "Leaderboard.png";
         ImageIcon bannerIcon = new ImageIcon(bannerPath);
-        Image bannerImg = bannerIcon.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
-        bannerLabel.setIcon(new ImageIcon(bannerImg));
+        // Display banner at natural resolution (no compression)
+        bannerLabel.setIcon(bannerIcon);
 
         JTextArea leaderboardArea = new JTextArea();
         leaderboardArea.setEditable(false);
