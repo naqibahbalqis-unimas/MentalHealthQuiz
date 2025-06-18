@@ -27,7 +27,7 @@ public class QuizAppGUI {
     private void createGUI() {
         frame = new JFrame("Mental Health Quiz");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(540, 1200); 
+        frame.setSize(394, 700); // 9:16 ratio, height capped at 700px
 
         questionArea = new JTextArea(3, 30);
         questionArea.setWrapStyleWord(true);
@@ -113,13 +113,30 @@ public class QuizAppGUI {
         double percentage = quiz.calculateScore();
         String message = quiz.getMotivationalMessage();
 
-        JOptionPane.showMessageDialog(frame,
-                "Your Score: " + score + "\n" +
-                "Percentage: " + percentage + "%\n" +
-                message,
-                "Quiz Results",
-                JOptionPane.INFORMATION_MESSAGE);
-        frame.dispose();
+        JPanel resultPanel = new JPanel();
+        resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
+
+        JLabel scoreLabel = new JLabel("Your Score: " + score);
+        scoreLabel.setFont(new Font("Times New Roman", Font.BOLD, 24));
+        JLabel percentageLabel = new JLabel("Percentage: " + percentage + "%");
+        percentageLabel.setFont(new Font("Times New Roman", Font.BOLD, 24));
+
+        JTextArea messageArea = new JTextArea(message);
+        messageArea.setWrapStyleWord(true);
+        messageArea.setLineWrap(true);
+        messageArea.setEditable(false);
+        messageArea.setFont(new Font("Times New Roman", Font.PLAIN, 20));
+
+        resultPanel.add(scoreLabel);
+        resultPanel.add(Box.createVerticalStrut(10));
+        resultPanel.add(percentageLabel);
+        resultPanel.add(Box.createVerticalStrut(10));
+        resultPanel.add(new JScrollPane(messageArea));
+
+        frame.getContentPane().removeAll();
+        frame.getContentPane().add(resultPanel);
+        frame.revalidate();
+        frame.repaint();
     }
 
     private void loadSampleQuestions() {
