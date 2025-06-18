@@ -26,14 +26,13 @@ public class GamificationGUI {
     private JPanel mainPanel;
 
     private GamificationEngine engine = new GamificationEngine();
-    private QuizModule quizModule = new QuizModule(engine);
     private User currentUser;
 
     public GamificationGUI(User user, int correctAnswers) {
         this.currentUser = user;
         engine.addUser(user);
         allUsers.add(user);
-        quizModule.awardScoreToUser(user, correctAnswers);
+        engine.awardPointsToUser(user, correctAnswers);
 
         frame = new JFrame("Mental Health Awareness Gamification");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
