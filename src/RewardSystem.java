@@ -11,8 +11,22 @@
  */
 
 public interface RewardSystem {
+    /**
+     * Award a number of points.
+     *
+     * @param points points to add
+     */
     void awardPoints(int points);
+
+    /**
+     * @return total accumulated points
+     */
     int getTotalPoints();
-    String getBadge();
-    void updateLeaderboard();
+
+    /**
+     * Retrieve the badge earned by the user.
+     *
+     * @return the current {@link Badge}
+     */
+    Badge getBadge();
 }
