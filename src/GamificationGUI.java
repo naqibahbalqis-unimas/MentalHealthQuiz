@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 
 public class GamificationGUI {
     private static List<User> allUsers = new ArrayList<>(); // Global user list for leaderboard
@@ -95,7 +96,8 @@ public class GamificationGUI {
 
         JLabel bannerLabel = new JLabel();
         bannerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        ImageIcon bannerIcon = new ImageIcon("C://Users//User//Java Lab//101059-Lab 3//ProjectJava//Leaderboard.png");
+        String bannerPath = "assets" + File.separator + "badges" + File.separator + "Leaderboard.png";
+        ImageIcon bannerIcon = new ImageIcon(bannerPath);
         Image bannerImg = bannerIcon.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
         bannerLabel.setIcon(new ImageIcon(bannerImg));
 

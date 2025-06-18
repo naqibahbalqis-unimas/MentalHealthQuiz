@@ -65,7 +65,9 @@ public class GamificationEngine implements RewardSystem {
         return users.stream().mapToInt(User::getTotalPoints).sum();
     }
 
-    @Override
+    /**
+     * Sort users by their total points in descending order.
+     */
     public void updateLeaderboard() {
         users.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
     }
@@ -90,11 +92,10 @@ public class GamificationEngine implements RewardSystem {
     }
 
     @Override
-    public String getBadge() {
-        // Return the badge name of the current user or null if no users exist
+    public Badge getBadge() {
+        // Return the badge of the current user or null if no users exist
         if (!users.isEmpty()) {
-            Badge badge = users.get(users.size() - 1).getBadge();
-            return badge != null ? badge.getBadgeName() : null;
+            return users.get(users.size() - 1).getBadge();
         }
         return null;
     }
