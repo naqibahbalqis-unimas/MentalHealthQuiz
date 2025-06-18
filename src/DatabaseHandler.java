@@ -1,19 +1,3 @@
-/**
- * Interface: DatabaseHandler
- * Creator: Rawaidatul Aliah binti Mohd Rawawi
- * Matric No: 97787
- * Tester: 
- * Date: 18/6/2025
- * Description: This interface defines the required operations for any
- * data management class used in the application. It ensures standardized
- * methods for:
- * - Saving and loading text-based data
- * - Appending scores and retrieving them
- * - Resetting or deleting stored data
- *
- * It is implemented by the DataManager class for persistent score storage.
- */
-
 import java.util.List;
 
 /**
