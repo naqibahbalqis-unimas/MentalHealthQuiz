@@ -260,6 +260,6 @@ public class QuizAppGUI {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new QuizAppGUI());
+        SwingUtilities.invokeLater(() -> new LearningModule(() -> new QuizAppGUI()));
     }
 }
