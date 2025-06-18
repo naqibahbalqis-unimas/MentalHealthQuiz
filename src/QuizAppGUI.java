@@ -1,163 +1,131 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
-public class QuizAppGUI {
-    private JFrame frame;
-    private JTextArea questionArea;
-    private JPanel optionsPanel;
-    private JButton submitButton;
-    private JLabel feedbackLabel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * JavaFX version of the quiz application.
+ * It displays a learning module first and then a series of quiz questions.
+ */
+public class QuizAppGUI extends Application {
+    private Stage stage;
+    private TextArea questionArea;
+    private VBox optionsBox;
+    private Button submitButton;
 
     private QuizModule quiz;
-    private java.util.List<String> userAnswers;
+    private List<String> userAnswers;
     private int currentQuestionIndex = 0;
 
-    // Learning module
     private LearningModule learningModule;
 
-    // Mobile preview dimensions (9:16 ratio)
     private static final int MOBILE_WIDTH = 394;
     private static final int MOBILE_HEIGHT = 700;
 
-    public QuizAppGUI() {
+    @Override
+    public void start(Stage primaryStage) {
+        stage = primaryStage;
+        stage.setTitle("Mental Health Learning & Quiz");
+
         quiz = new QuizModule(120);
         userAnswers = new ArrayList<>();
         loadSampleQuestions();
         quiz.generateQuiz();
-        createGUI();
-        
-        // Create learning module and show it first
+
         learningModule = new LearningModule(() -> startQuiz());
         showLearningModule();
-    }
-
-    private void createGUI() {
-        frame = new JFrame("Mental Health Learning & Quiz");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(MOBILE_WIDTH, MOBILE_HEIGHT);
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null);
-
-        // Initialize quiz components (will be used later)
-        questionArea = new JTextArea(3, 30);
-        questionArea.setWrapStyleWord(true);
-        questionArea.setLineWrap(true);
-        questionArea.setEditable(false);
-        questionArea.setFont(new Font("Times New Roman", Font.BOLD, 18));
-        questionArea.setBackground(frame.getBackground());
-
-        optionsPanel = new JPanel();
-        optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.Y_AXIS));
-
-        submitButton = new JButton("Submit Answer");
-        submitButton.setFont(new Font("Times New Roman", Font.BOLD, 16));
-        submitButton.setPreferredSize(new Dimension(200, 40));
-
-        submitButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ButtonModel selected = buttonGroup.getSelection();
-                if (selected != null) {
-                    userAnswers.add(selected.getActionCommand());
-                    currentQuestionIndex++;
-                    if (currentQuestionIndex < quiz.questions.size()) {
-                        showQuestion(currentQuestionIndex);
-                    } else {
-                        showResults();
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(frame, "Please select an answer.");
-                }
-            }
-        });
-
-        frame.setVisible(true);
+        stage.show();
     }
 
     private void showLearningModule() {
-        frame.getContentPane().removeAll();
-        frame.getContentPane().add(learningModule.getPanel());
-        frame.revalidate();
-        frame.repaint();
+        Scene scene = new Scene(learningModule.getPane(), MOBILE_WIDTH, MOBILE_HEIGHT, Color.BEIGE);
+        stage.setScene(scene);
     }
 
+    private ToggleGroup toggleGroup;
+
     private void startQuiz() {
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        // Create scrollable question area
-        JScrollPane questionScroll = new JScrollPane(questionArea);
-        questionScroll.setPreferredSize(new Dimension(MOBILE_WIDTH - 40, 120));
-        questionScroll.setBorder(BorderFactory.createTitledBorder("Question"));
-        
-        // Create scrollable options area
-        JScrollPane optionsScroll = new JScrollPane(optionsPanel);
-        optionsScroll.setPreferredSize(new Dimension(MOBILE_WIDTH - 40, 400));
-        optionsScroll.setBorder(BorderFactory.createTitledBorder("Choose your answer"));
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(submitButton);
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(10));
+        root.setStyle("-fx-background-color: beige;");
 
-        mainPanel.add(questionScroll, BorderLayout.NORTH);
-        mainPanel.add(optionsScroll, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        questionArea = new TextArea();
+        questionArea.setWrapText(true);
+        questionArea.setEditable(false);
+        questionArea.setFont(Font.font("Times New Roman", 18));
 
-        frame.getContentPane().removeAll();
-        frame.getContentPane().add(mainPanel);
-        frame.revalidate();
-        frame.repaint();
-        
+        ScrollPane qScroll = new ScrollPane(questionArea);
+        qScroll.setPrefHeight(120);
+        qScroll.setFitToWidth(true);
+
+        optionsBox = new VBox(5);
+        ScrollPane optionsScroll = new ScrollPane(optionsBox);
+        optionsScroll.setPrefHeight(400);
+        optionsScroll.setFitToWidth(true);
+
+        submitButton = new Button("Submit Answer");
+        submitButton.setOnAction(e -> handleSubmit());
+
+        VBox center = new VBox(10, qScroll, optionsScroll, submitButton);
+        center.setAlignment(Pos.TOP_CENTER);
+        root.setCenter(center);
+
+        Scene scene = new Scene(root, MOBILE_WIDTH, MOBILE_HEIGHT, Color.BEIGE);
+        stage.setScene(scene);
         showQuestion(currentQuestionIndex);
     }
 
-    private ButtonGroup buttonGroup;
+    private void handleSubmit() {
+        if (toggleGroup.getSelectedToggle() != null) {
+            String answer = (String) toggleGroup.getSelectedToggle().getUserData();
+            userAnswers.add(answer);
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quiz.questions.size()) {
+                showQuestion(currentQuestionIndex);
+            } else {
+                showResults();
+            }
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Please select an answer.");
+            alert.showAndWait();
+        }
+    }
 
     private void showQuestion(int index) {
         Question q = quiz.questions.get(index);
-        questionArea.setText("Question " + (index + 1) + " of " + quiz.questions.size() + ":\n\n" + q.getQuestion());
-        optionsPanel.removeAll();
-
-        buttonGroup = new ButtonGroup();
+        questionArea.setText("Question " + (index + 1) + " of " + quiz.questions.size() + "\n\n" + q.getQuestion());
+        optionsBox.getChildren().clear();
+        toggleGroup = new ToggleGroup();
 
         if (q instanceof MultipleChoiceQuestion) {
-            java.util.List<String> options = ((MultipleChoiceQuestion) q).getOptions();
-            for (int i = 0; i < options.size(); i++) {
-                String option = options.get(i);
-                JRadioButton btn = new JRadioButton((char)('A' + i) + ") " + option);
-                btn.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-                btn.setActionCommand(option);
-                btn.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-                buttonGroup.add(btn);
-                
-                optionsPanel.add(Box.createVerticalStrut(5));
-                optionsPanel.add(btn);
+            List<String> opts = ((MultipleChoiceQuestion) q).getOptions();
+            for (int i = 0; i < opts.size(); i++) {
+                RadioButton rb = new RadioButton((char)('A' + i) + ") " + opts.get(i));
+                rb.setUserData(opts.get(i));
+                rb.setFont(Font.font("Times New Roman", 16));
+                rb.setToggleGroup(toggleGroup);
+                optionsBox.getChildren().add(rb);
             }
         } else if (q instanceof TrueFalseQuestion) {
-            JRadioButton trueBtn = new JRadioButton("A) True");
-            trueBtn.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-            trueBtn.setActionCommand("true");
-            trueBtn.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-
-            JRadioButton falseBtn = new JRadioButton("B) False");
-            falseBtn.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-            falseBtn.setActionCommand("false");
-            falseBtn.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-
-            buttonGroup.add(trueBtn);
-            buttonGroup.add(falseBtn);
-            
-            optionsPanel.add(Box.createVerticalStrut(5));
-            optionsPanel.add(trueBtn);
-            optionsPanel.add(Box.createVerticalStrut(5));
-            optionsPanel.add(falseBtn);
+            RadioButton trueBtn = new RadioButton("A) True");
+            trueBtn.setUserData("true");
+            RadioButton falseBtn = new RadioButton("B) False");
+            falseBtn.setUserData("false");
+            trueBtn.setFont(Font.font("Times New Roman", 16));
+            falseBtn.setFont(Font.font("Times New Roman", 16));
+            trueBtn.setToggleGroup(toggleGroup);
+            falseBtn.setToggleGroup(toggleGroup);
+            optionsBox.getChildren().addAll(trueBtn, falseBtn);
         }
-
-        optionsPanel.add(Box.createVerticalStrut(20));
-        optionsPanel.revalidate();
-        optionsPanel.repaint();
     }
 
     private void showResults() {
@@ -165,74 +133,52 @@ public class QuizAppGUI {
         double percentage = quiz.calculateScore();
         String message = quiz.getMotivationalMessage();
 
-        JPanel resultPanel = new JPanel();
-        resultPanel.setLayout(new BorderLayout(10, 10));
-        resultPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        VBox root = new VBox(10);
+        root.setAlignment(Pos.TOP_CENTER);
+        root.setPadding(new Insets(20));
+        root.setStyle("-fx-background-color: beige;");
 
-        // Header panel with score
-        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-        JLabel scoreLabel = new JLabel("Your Score: " + score + "/" + quiz.questions.size(), JLabel.CENTER);
-        scoreLabel.setFont(new Font("Times New Roman", Font.BOLD, 24));
-        JLabel percentageLabel = new JLabel(String.format("Percentage: %.1f%%", percentage), JLabel.CENTER);
-        percentageLabel.setFont(new Font("Times New Roman", Font.BOLD, 20));
-        
-        // Color code the percentage
+        Label scoreLabel = new Label("Your Score: " + score + "/" + quiz.questions.size());
+        scoreLabel.setFont(Font.font("Times New Roman", 24));
+        Label percentLabel = new Label(String.format("Percentage: %.1f%%", percentage));
+        percentLabel.setFont(Font.font("Times New Roman", 20));
         if (percentage >= 80) {
-            percentageLabel.setForeground(new Color(0, 128, 0)); // Green
+            percentLabel.setTextFill(Color.DARKGREEN);
         } else if (percentage >= 60) {
-            percentageLabel.setForeground(new Color(255, 140, 0)); // Orange
+            percentLabel.setTextFill(Color.DARKORANGE);
         } else {
-            percentageLabel.setForeground(Color.RED);
+            percentLabel.setTextFill(Color.RED);
         }
 
-        headerPanel.add(scoreLabel);
-        headerPanel.add(percentageLabel);
+        TextArea msg = new TextArea(message);
+        msg.setWrapText(true);
+        msg.setEditable(false);
+        msg.setFont(Font.font("Times New Roman", 16));
 
-        // Message area
-        JTextArea messageArea = new JTextArea(message);
-        messageArea.setWrapStyleWord(true);
-        messageArea.setLineWrap(true);
-        messageArea.setEditable(false);
-        messageArea.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-        messageArea.setBackground(frame.getBackground());
-        messageArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JScrollPane messageScroll = new JScrollPane(messageArea);
-        messageScroll.setBorder(BorderFactory.createTitledBorder("Feedback"));
-
-        // Restart buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        
-        JButton restartLearningButton = new JButton("Review Learning");
-        restartLearningButton.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        restartLearningButton.addActionListener(e -> {
+        Button reviewBtn = new Button("Review Learning");
+        reviewBtn.setOnAction(e -> {
             currentQuestionIndex = 0;
             userAnswers.clear();
             quiz.generateQuiz();
-            learningModule.reset(); // Reset to first page
+            learningModule.reset();
             showLearningModule();
         });
 
-        JButton retakeQuizButton = new JButton("Retake Quiz");
-        retakeQuizButton.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        retakeQuizButton.addActionListener(e -> {
+        Button retryBtn = new Button("Retake Quiz");
+        retryBtn.setOnAction(e -> {
             currentQuestionIndex = 0;
             userAnswers.clear();
             quiz.generateQuiz();
             startQuiz();
         });
 
-        buttonPanel.add(restartLearningButton);
-        buttonPanel.add(retakeQuizButton);
+        HBox buttons = new HBox(10, reviewBtn, retryBtn);
+        buttons.setAlignment(Pos.CENTER);
 
-        resultPanel.add(headerPanel, BorderLayout.NORTH);
-        resultPanel.add(messageScroll, BorderLayout.CENTER);
-        resultPanel.add(buttonPanel, BorderLayout.SOUTH);
+        root.getChildren().addAll(scoreLabel, percentLabel, msg, buttons);
 
-        frame.getContentPane().removeAll();
-        frame.getContentPane().add(resultPanel);
-        frame.revalidate();
-        frame.repaint();
+        Scene scene = new Scene(root, MOBILE_WIDTH, MOBILE_HEIGHT, Color.BEIGE);
+        stage.setScene(scene);
     }
 
     private void loadSampleQuestions() {
@@ -373,14 +319,6 @@ public class QuizAppGUI {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            
-            new QuizAppGUI();
-        });
+        launch(args);
     }
 }
