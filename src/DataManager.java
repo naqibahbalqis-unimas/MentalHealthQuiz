@@ -1,3 +1,21 @@
+/**
+ * Class: DataManager
+ * Creator: Rawaidatul Aliah binti Mohd Rawawi
+ * Matric No: 97787
+ * Tester: 
+ * Date: 18/6/2025
+ * Description: This class manages file-based storage for user quiz scores.
+ * It implements the DatabaseHandler interface to:
+ * - Save and load data to/from a text file
+ * - Append new scores with validation
+ * - Calculate average and latest scores
+ * - Provide motivational messages based on performance
+ * - Delete/reset stored data
+ *
+ * It supports error handling using the custom DataAccessException
+ * and plays a central role in maintaining score data for gamification and analysis.
+ */
+
 import java.io.*;
 import java.util.*;
 
@@ -5,19 +23,28 @@ public class DataManager implements DatabaseHandler {
     private String fileName;
     private List<Integer> scores;
 
+    /**
+     * Constructor that initializes the DataManager with a filename.
+     * Creates the file if it does not exist.
+     */
     public DataManager(String fileName) throws DataAccessException {
         this.fileName = fileName;
         this.scores = new ArrayList<>();
         initializeFile();
     }
 
-    // Overloaded constructor (example of overloading)
+    /**
+     * Overloaded constructor that accepts initial scores.
+     */
     public DataManager(String fileName, List<Integer> initialScores) throws DataAccessException {
         this.fileName = fileName;
         this.scores = new ArrayList<>(initialScores);
         initializeFile();
     }
 
+    /**
+     * Checks if the file exists. If not, creates a new one.
+     */
     private void initializeFile() throws DataAccessException {
         File file = new File(fileName);
         try {
@@ -29,6 +56,9 @@ public class DataManager implements DatabaseHandler {
         }
     }
 
+    /**
+     * Saves the given string data to the file, overwriting previous content.
+     */
     @Override
     public void saveData(String data) throws DataAccessException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
@@ -38,6 +68,9 @@ public class DataManager implements DatabaseHandler {
         }
     }
 
+    /**
+     * Loads the full contents of the file as a single string.
+     */
     @Override
     public String loadData() throws DataAccessException {
         StringBuilder sb = new StringBuilder();
@@ -52,6 +85,10 @@ public class DataManager implements DatabaseHandler {
         return sb.toString();
     }
 
+    /**
+     * Loads user scores from the file into the scores list.
+     * Skips invalid entries.
+     */
     @Override
     public List<Integer> getUserScores() throws DataAccessException {
         scores.clear();
@@ -70,6 +107,10 @@ public class DataManager implements DatabaseHandler {
         return scores;
     }
 
+    /**
+     * Appends a new score to the file and updates the internal scores list.
+     * Score must be between 0 and 100.
+     */
     @Override
     public void appendScore(int score) throws DataAccessException {
         if (score < 0 || score > 100) {
@@ -84,11 +125,19 @@ public class DataManager implements DatabaseHandler {
         scores.add(score);
     }
 
+    /**
+     * Returns the most recent score from the file.
+     * Returns 0 if no scores exist.
+     */
     public int getLatestScore() throws DataAccessException {
         getUserScores(); // Ensure latest data
         return scores.isEmpty() ? 0 : scores.get(scores.size() - 1);
     }
 
+    /**
+     * Calculates and returns the average score.
+     * Returns 0.0 if no scores are available.
+     */
     public double getAverageScore() throws DataAccessException {
         getUserScores();
         if (scores.isEmpty()) return 0.0;
@@ -99,6 +148,9 @@ public class DataManager implements DatabaseHandler {
         return (double) sum / scores.size();
     }
 
+     /**
+     * Returns a motivational message based on the average score.
+     */
     public String getMotivationalMessage() throws DataAccessException {
         double avg = getAverageScore();
         if (avg >= 80) return "Outstanding!";
@@ -108,6 +160,9 @@ public class DataManager implements DatabaseHandler {
         return "Don't give up!";
     }
 
+    /**
+     * Deletes all data in the file and clears the internal scores list.
+     */
     @Override
     public void deleteData() throws DataAccessException {
         try (PrintWriter writer = new PrintWriter(fileName)) {
