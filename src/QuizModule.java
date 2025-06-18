@@ -7,11 +7,18 @@ public class QuizModule implements QuestionHandler {
     private int currentScore;
     private int totalQuestions;
     private int timeLimit; // in seconds
+    private GamificationEngine engine;
 
     public QuizModule(int timeLimit) {
         this.timeLimit = timeLimit;
         this.questions = new ArrayList<>();
         this.currentScore = 0;
+    }
+
+    // Constructor used when integrating with the gamification engine
+    public QuizModule(GamificationEngine engine) {
+        this(60); // default time limit
+        this.engine = engine;
     }
 
     public void addQuestion(Question question) {
@@ -57,6 +64,13 @@ public class QuizModule implements QuestionHandler {
     @Override
     public boolean validateAnswer(Question question, String answer) {
         return question.evaluate(answer);
+    }
+
+    // Awards the calculated score for the given user via the gamification engine
+    public void awardScoreToUser(User user, int correctAnswers) {
+        if (engine != null) {
+            engine.awardPointsToUser(user, correctAnswers);
+        }
     }
 
     @Override
