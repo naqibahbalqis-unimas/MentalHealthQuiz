@@ -1,0 +1,18 @@
+{
+	"java.project.sourcePaths": ["src"],
+	"java.project.referencedLibraries": [
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.swing.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.media.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.web.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.fxml.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\jdk.jsobject.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.controls.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.graphics.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\jfx.incubator.input.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx.base.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\javafx-swt.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\gson-2.10.1.jar",
+		"d:\\project\\MentalHealthQuiz\\lib\\jfx.incubator.richtext.jar"
+	],
+	"java.format.settings.url": ".vscode/java-formatter.xml"
+}
