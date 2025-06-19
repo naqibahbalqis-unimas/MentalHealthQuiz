@@ -1,20 +1,12 @@
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javax.swing.*;
+import java.awt.*;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Comparator;
 
 /**
- * Simple JavaFX based learning module displaying a sequence of images.
+ * Swing based learning module displaying a sequence of images.
  * Users can navigate with previous/next buttons and start the quiz when
  * reaching the last page.
  */
@@ -23,13 +15,13 @@ public class LearningModule {
     private int currentPage;
     private int totalPages;
 
-    private ImageView imageView;
-    private Button nextButton;
-    private Button prevButton;
-    private Button startQuizButton;
-    private ProgressBar progressBar;
+    private JLabel imageLabel;
+    private JButton nextButton;
+    private JButton prevButton;
+    private JButton startQuizButton;
+    private JProgressBar progressBar;
     private Runnable onFinish;
-    private BorderPane mainPane;
+    private JPanel mainPane;
 
     private static final int MOBILE_WIDTH = 394;
     private static final int MOBILE_HEIGHT = 700;
@@ -54,45 +46,44 @@ public class LearningModule {
     }
 
     private void createComponents() {
-        mainPane = new BorderPane();
-        mainPane.setPrefSize(MOBILE_WIDTH, MOBILE_HEIGHT);
-        mainPane.setPadding(new Insets(10));
-        mainPane.setStyle("-fx-background-color: beige;");
+        mainPane = new JPanel(new BorderLayout());
+        mainPane.setPreferredSize(new Dimension(MOBILE_WIDTH, MOBILE_HEIGHT));
+        mainPane.setBackground(new Color(245, 245, 220));
+        mainPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        Label title = new Label("Learning Module");
-        title.setFont(javafx.scene.text.Font.font("Times New Roman", 20));
-        BorderPane.setAlignment(title, Pos.CENTER);
-        mainPane.setTop(title);
+        JLabel title = new JLabel("Learning Module", SwingConstants.CENTER);
+        title.setFont(new Font("Times New Roman", Font.BOLD, 20));
+        mainPane.add(title, BorderLayout.NORTH);
 
-        imageView = new ImageView();
-        imageView.setPreserveRatio(true);
-        imageView.setFitHeight(450);
-        imageView.setFitWidth(MOBILE_WIDTH - 40);
-        mainPane.setCenter(imageView);
+        imageLabel = new JLabel();
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        imageLabel.setPreferredSize(new Dimension(MOBILE_WIDTH - 40, 450));
+        mainPane.add(imageLabel, BorderLayout.CENTER);
 
-        progressBar = new ProgressBar();
-        progressBar.setPrefWidth(MOBILE_WIDTH - 40);
+        progressBar = new JProgressBar(0, 100);
 
-        prevButton = new Button("<");
-        nextButton = new Button(">");
-        startQuizButton = new Button("Start Quiz");
+        prevButton = new JButton("<");
+        nextButton = new JButton(">");
+        startQuizButton = new JButton("Start Quiz");
         startQuizButton.setVisible(false);
 
-        prevButton.setOnAction(e -> showPreviousPage());
-        nextButton.setOnAction(e -> showNextPage());
-        startQuizButton.setOnAction(e -> {
+        prevButton.addActionListener(e -> showPreviousPage());
+        nextButton.addActionListener(e -> showNextPage());
+        startQuizButton.addActionListener(e -> {
             if (onFinish != null) {
                 onFinish.run();
             }
         });
 
-        HBox nav = new HBox(10, prevButton, nextButton, startQuizButton);
-        nav.setAlignment(Pos.CENTER);
+        JPanel nav = new JPanel();
+        nav.add(prevButton);
+        nav.add(nextButton);
+        nav.add(startQuizButton);
 
-        VBox bottom = new VBox(5, progressBar, nav);
-        bottom.setAlignment(Pos.CENTER);
-        bottom.setPadding(new Insets(10, 0, 0, 0));
-        mainPane.setBottom(bottom);
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.add(progressBar, BorderLayout.CENTER);
+        bottom.add(nav, BorderLayout.SOUTH);
+        mainPane.add(bottom, BorderLayout.SOUTH);
 
         displayPage();
     }
@@ -103,11 +94,10 @@ public class LearningModule {
             return;
         }
 
-        Image img = new Image(new File(pages[currentPage]).toURI().toString());
-        imageView.setImage(img);
+        ImageIcon icon = new ImageIcon(new File(pages[currentPage]).toURI().toString());
+        imageLabel.setIcon(icon);
         updateProgress();
-
-        prevButton.setDisable(currentPage == 0);
+        prevButton.setEnabled(currentPage != 0);
         if (currentPage == totalPages - 1) {
             nextButton.setVisible(false);
             startQuizButton.setVisible(true);
@@ -119,9 +109,10 @@ public class LearningModule {
 
     private void updateProgress() {
         if (totalPages <= 1) {
-            progressBar.setProgress(0);
+            progressBar.setValue(0);
         } else {
-            progressBar.setProgress((double) currentPage / (totalPages - 1));
+            int value = (int) (100.0 * currentPage / (totalPages - 1));
+            progressBar.setValue(value);
         }
     }
 
@@ -144,7 +135,7 @@ public class LearningModule {
         displayPage();
     }
 
-    public BorderPane getPane() {
+    public JPanel getPane() {
         return mainPane;
     }
 }
