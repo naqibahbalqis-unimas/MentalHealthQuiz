@@ -695,6 +695,7 @@ public class QuizAppGUI {
                 "Persistent sadness"
         ));
 
+        
         quiz.addQuestion(new TrueFalseQuestion(
                 "Burnout only affects people with low-paying jobs.",
                 10,
