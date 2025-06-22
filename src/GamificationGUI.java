@@ -7,8 +7,7 @@
  *
  * Description:
  * This class builds the graphical user interface for the mental health gamification system.
- * It shows the quiz result screen (with points and badges), and a leaderboard showing all users.
- * This GUI connects with QuizModule and supports simulation of multiple users.
+ * Updated to use persistent leaderboard data that survives application restarts.
  */
 import javax.swing.*;
 
@@ -19,8 +18,6 @@ import java.util.List;
 import java.io.File;
 
 public class GamificationGUI {
-    private static List<User> allUsers = new ArrayList<>(); // Global user list for leaderboard
-
     private JFrame frame;
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -31,7 +28,6 @@ public class GamificationGUI {
     public GamificationGUI(User user, int correctAnswers) {
         this.currentUser = user;
         engine.addUser(user);
-        allUsers.add(user);
         engine.awardPointsToUser(user, correctAnswers);
 
         frame = new JFrame("Mental Health Awareness Gamification");
@@ -109,7 +105,10 @@ public class GamificationGUI {
         });
 
         // Button actions
-        viewLeaderboardBtn.addActionListener(e -> cardLayout.show(mainPanel, "leaderboard"));
+        viewLeaderboardBtn.addActionListener(e -> {
+            updateLeaderboardContent(); // Refresh leaderboard before showing
+            cardLayout.show(mainPanel, "leaderboard");
+        });
         
         takeQuizAgainBtn.addActionListener(e -> {
             frame.dispose();
@@ -162,15 +161,17 @@ public class GamificationGUI {
                 int originalWidth = img.getWidth(null);
                 int originalHeight = img.getHeight(null);
                 
-                // Calculate scaled dimensions maintaining aspect ratio
-                int maxSize = 150;
-                double ratio = Math.min((double) maxSize / originalWidth, (double) maxSize / originalHeight);
-                
-                int scaledWidth = (int) (originalWidth * ratio);
-                int scaledHeight = (int) (originalHeight * ratio);
-                
-                Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-                badgeImage.setIcon(new ImageIcon(scaledImg));
+                if (originalWidth > 0 && originalHeight > 0) {
+                    // Calculate scaled dimensions maintaining aspect ratio
+                    int maxSize = 150;
+                    double ratio = Math.min((double) maxSize / originalWidth, (double) maxSize / originalHeight);
+                    
+                    int scaledWidth = (int) (originalWidth * ratio);
+                    int scaledHeight = (int) (originalHeight * ratio);
+                    
+                    Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+                    badgeImage.setIcon(new ImageIcon(scaledImg));
+                }
             } catch (Exception ex) {
                 badgeImage.setText("Badge: " + currentUser.getBadgeName());
                 badgeImage.setFont(new Font("Times New Roman", Font.BOLD, 16));
@@ -217,19 +218,21 @@ public class GamificationGUI {
             int originalWidth = img.getWidth(null);
             int originalHeight = img.getHeight(null);
             
-            // Calculate scaled dimensions maintaining aspect ratio
-            int maxWidth = 300;
-            int maxHeight = 150;
-            
-            double widthRatio = (double) maxWidth / originalWidth;
-            double heightRatio = (double) maxHeight / originalHeight;
-            double ratio = Math.min(widthRatio, heightRatio);
-            
-            int scaledWidth = (int) (originalWidth * ratio);
-            int scaledHeight = (int) (originalHeight * ratio);
-            
-            Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-            bannerLabel.setIcon(new ImageIcon(scaledImg));
+            if (originalWidth > 0 && originalHeight > 0) {
+                // Calculate scaled dimensions maintaining aspect ratio
+                int maxWidth = 300;
+                int maxHeight = 150;
+                
+                double widthRatio = (double) maxWidth / originalWidth;
+                double heightRatio = (double) maxHeight / originalHeight;
+                double ratio = Math.min(widthRatio, heightRatio);
+                
+                int scaledWidth = (int) (originalWidth * ratio);
+                int scaledHeight = (int) (originalHeight * ratio);
+                
+                Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+                bannerLabel.setIcon(new ImageIcon(scaledImg));
+            }
         } catch (Exception e) {
             bannerLabel.setText("🏆 LEADERBOARD 🏆");
             bannerLabel.setFont(new Font("Times New Roman", Font.BOLD, 20));
@@ -265,18 +268,37 @@ public class GamificationGUI {
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Update leaderboard content
-        updateLeaderboardContent(leaderboardArea);
+        // Store reference for updates
+        panel.putClientProperty("leaderboardArea", leaderboardArea);
 
         backBtn.addActionListener(e -> cardLayout.show(mainPanel, "result"));
-        refreshBtn.addActionListener(e -> updateLeaderboardContent(leaderboardArea));
+        refreshBtn.addActionListener(e -> updateLeaderboardContent());
 
         return panel;
     }
 
-    private void updateLeaderboardContent(JTextArea leaderboardArea) {
+    private void updateLeaderboardContent() {
+        JPanel leaderboardPanel = null;
+        for (Component comp : mainPanel.getComponents()) {
+            if (comp instanceof JPanel) {
+                Object property = ((JPanel) comp).getClientProperty("leaderboardArea");
+                if (property != null) {
+                    leaderboardPanel = (JPanel) comp;
+                    break;
+                }
+            }
+        }
+        
+        if (leaderboardPanel == null) return;
+        
+        JTextArea leaderboardArea = (JTextArea) leaderboardPanel.getClientProperty("leaderboardArea");
+        if (leaderboardArea == null) return;
+
         leaderboardArea.setText("");
-        allUsers.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
+        
+        // Get users from the gamification engine (persistent data)
+        List<User> allUsers = engine.getAllUsers();
+        
         StringBuilder sb = new StringBuilder();
         
         // Header
@@ -319,9 +341,6 @@ public class GamificationGUI {
     // Method for testing multiple users
     public static void simulateMultipleUsers() {
         SwingUtilities.invokeLater(() -> {
-            // Clear existing users for fresh simulation
-            allUsers.clear();
-            
             // Create some sample users with different scores
             new GamificationGUI(new User("Alice", 18), 9);
             new GamificationGUI(new User("Bob", 12), 6);

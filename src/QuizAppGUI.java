@@ -8,12 +8,9 @@ import java.io.File;
 
 /**
  * Swing version of the quiz application with integrated gamification.
- * It displays a learning module first, then a series of quiz questions,
- * followed by gamification results (badges and leaderboard) all in the same window.
+ * Updated to use persistent leaderboard data that survives application restarts.
  */
 public class QuizAppGUI {
-    private static List<User> allUsers = new ArrayList<>(); // Global user list for leaderboard
-    
     private JFrame frame;
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -43,7 +40,7 @@ public class QuizAppGUI {
         frame.setSize(MOBILE_WIDTH, MOBILE_HEIGHT);
         frame.setLocationRelativeTo(null);
 
-        // Initialize gamification engine
+        // Initialize gamification engine (this will load existing leaderboard data)
         gamificationEngine = new GamificationEngine();
         
         quiz = new QuizModule(120);
@@ -121,7 +118,7 @@ public class QuizAppGUI {
         center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
         center.add(qScroll);
         center.add(optionsScroll);
-        center.add(Box.createVerticalStrut(10)); // Add some spacing
+        center.add(Box.createVerticalStrut(10));
         center.add(submitButton);
 
         root.add(userLabel, BorderLayout.NORTH);
@@ -239,7 +236,10 @@ public class QuizAppGUI {
         
         JButton viewLeaderboardBtn = new JButton("View Leaderboard");
         viewLeaderboardBtn.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        viewLeaderboardBtn.addActionListener(e -> cardLayout.show(mainPanel, "leaderboard"));
+        viewLeaderboardBtn.addActionListener(e -> {
+            updateLeaderboardPanel(); // Refresh leaderboard before showing
+            cardLayout.show(mainPanel, "leaderboard");
+        });
         
         JButton backToResultsBtn = new JButton("Back to Results");
         backToResultsBtn.setFont(new Font("Times New Roman", Font.PLAIN, 14));
@@ -299,15 +299,17 @@ public class QuizAppGUI {
             int maxWidth = 250;
             int maxHeight = 100;
             
-            double widthRatio = (double) maxWidth / originalWidth;
-            double heightRatio = (double) maxHeight / originalHeight;
-            double ratio = Math.min(widthRatio, heightRatio);
-            
-            int scaledWidth = (int) (originalWidth * ratio);
-            int scaledHeight = (int) (originalHeight * ratio);
-            
-            Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-            bannerLabel.setIcon(new ImageIcon(scaledImg));
+            if (originalWidth > 0 && originalHeight > 0) {
+                double widthRatio = (double) maxWidth / originalWidth;
+                double heightRatio = (double) maxHeight / originalHeight;
+                double ratio = Math.min(widthRatio, heightRatio);
+                
+                int scaledWidth = (int) (originalWidth * ratio);
+                int scaledHeight = (int) (originalHeight * ratio);
+                
+                Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+                bannerLabel.setIcon(new ImageIcon(scaledImg));
+            }
         } catch (Exception e) {
             bannerLabel.setText("LEADERBOARD");
             bannerLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
@@ -351,9 +353,22 @@ public class QuizAppGUI {
         return panel;
     }
 
-    // New method for HTML-based leaderboard with images
+    /**
+     * Update leaderboard panel with current data from gamification engine
+     */
+    private void updateLeaderboardPanel() {
+        JPanel leaderboardPanel = (JPanel) getComponentByName("leaderboard");
+        JEditorPane leaderboardPane = (JEditorPane) leaderboardPanel.getClientProperty("leaderboardPane");
+        updateLeaderboardContentHTML(leaderboardPane);
+    }
+
+    /**
+     * Update leaderboard content using data from gamification engine (persistent data)
+     */
     private void updateLeaderboardContentHTML(JEditorPane leaderboardPane) {
-        allUsers.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
+        // Get users from the gamification engine (which loads from persistent storage)
+        List<User> allUsers = gamificationEngine.getAllUsers();
+        
         StringBuilder html = new StringBuilder();
         
         html.append("<html><body style='font-family: monospaced; font-size: 12px;'>");
@@ -400,17 +415,11 @@ public class QuizAppGUI {
         String basePath = "assets" + File.separator + "badges" + File.separator;
         switch (rank) {
             case 1: 
-                // Try to use Gold badge as rank 1 symbol
                 return createImageHTML(basePath + "Gold.png", 20, 20);
-                
             case 2: 
-                // Try to use Silver badge as rank 2 symbol  
                 return createImageHTML(basePath + "Silver.png", 20, 20);
-                
             case 3: 
-                // Try to use Bronze badge as rank 3 symbol
                 return createImageHTML(basePath + "Bronze.png", 20, 20);
-                
             default: 
                 return "";
         }
@@ -439,6 +448,9 @@ public class QuizAppGUI {
         userAnswers.clear();
         quiz.generateQuiz();
         learningModule.reset();
+        
+        // Get new user name for retake
+        getCurrentUserInfo();
     }
 
     private void handleSubmit() {
@@ -524,9 +536,8 @@ public class QuizAppGUI {
         
         msgArea.setText(message);
 
-        // Process gamification
+        // Process gamification - this will automatically handle persistence
         gamificationEngine.addUser(currentUser);
-        allUsers.add(currentUser);
         gamificationEngine.awardPointsToUser(currentUser, finalCorrectAnswers);
 
         // Update gamification panel
@@ -567,93 +578,22 @@ public class QuizAppGUI {
                 
                 int originalWidth = img.getWidth(null);
                 int originalHeight = img.getHeight(null);
-                int maxSize = 120;
-                double ratio = Math.min((double) maxSize / originalWidth, (double) maxSize / originalHeight);
                 
-                int scaledWidth = (int) (originalWidth * ratio);
-                int scaledHeight = (int) (originalHeight * ratio);
-                
-                Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-                badgeImage.setIcon(new ImageIcon(scaledImg));
+                if (originalWidth > 0 && originalHeight > 0) {
+                    int maxSize = 120;
+                    double ratio = Math.min((double) maxSize / originalWidth, (double) maxSize / originalHeight);
+                    
+                    int scaledWidth = (int) (originalWidth * ratio);
+                    int scaledHeight = (int) (originalHeight * ratio);
+                    
+                    Image scaledImg = img.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+                    badgeImage.setIcon(new ImageIcon(scaledImg));
+                }
             } catch (Exception ex) {
                 badgeImage.setText("Badge: " + currentUser.getBadgeName());
                 badgeImage.setFont(new Font("Times New Roman", Font.BOLD, 16));
             }
         }
-
-        // Update leaderboard
-        JPanel leaderboardPanel = (JPanel) getComponentByName("leaderboard");
-        JEditorPane leaderboardPane = (JEditorPane) leaderboardPanel.getClientProperty("leaderboardPane");
-        updateLeaderboardContentHTML(leaderboardPane);
-    }
-
-    private void updateLeaderboardContent(JTextArea leaderboardArea) {
-        leaderboardArea.setText("");
-        allUsers.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
-        StringBuilder sb = new StringBuilder();
-        
-        sb.append(String.format("%-5s %-15s %-8s %-12s%n", "Rank", "Name", "Points", "Badge"));
-        sb.append("─".repeat(45)).append("\n");
-        
-        int rank = 1;
-        for (User u : allUsers) {
-            String rankSymbol = getRankSymbol(rank);
-            sb.append(String.format("%-5s %-15s %-8d %-12s%n",
-                rankSymbol + rank, 
-                u.getName().length() > 13 ? u.getName().substring(0, 13) + ".." : u.getName(),
-                u.getTotalPoints(), 
-                u.getBadgeName()
-            ));
-            rank++;
-        }
-        
-        if (allUsers.isEmpty()) {
-            sb.append("\n").append(" ".repeat(15)).append("No users yet!");
-        }
-        
-        leaderboardArea.setText(sb.toString());
-    }
-
-    private String getRankSymbol(int rank) {
-        // You can use image assets instead of text
-        String basePath = "assets" + File.separator + "badges" + File.separator;
-        switch (rank) {
-            case 1: 
-                // Option 1: Use existing Gold badge as rank 1 symbol
-                // return createImageHTML(basePath + "Gold.png", 16, 16) + " ";
-                
-                // Option 2: Use text (current)
-                return "1st ";
-                
-                // Option 3: Use custom rank images (if you create them)
-                // return createImageHTML(basePath + "rank1.png", 16, 16) + " ";
-                
-            case 2: 
-                // return createImageHTML(basePath + "Silver.png", 16, 16) + " ";
-                return "2nd ";
-                
-            case 3: 
-                // return createImageHTML(basePath + "Bronze.png", 16, 16) + " ";
-                return "3rd ";
-                
-            default: 
-                return "   ";
-        }
-    }
-    
-    // Helper method to create HTML for images in text components
-    private String createImageHTML(String imagePath, int width, int height) {
-        try {
-            // Convert file path to URL for HTML
-            File imageFile = new File(imagePath);
-            if (imageFile.exists()) {
-                String imageUrl = imageFile.toURI().toString();
-                return "<img src='" + imageUrl + "' width='" + width + "' height='" + height + "'>";
-            }
-        } catch (Exception e) {
-            System.err.println("Could not load image: " + imagePath);
-        }
-        return ""; // Return empty string if image fails to load
     }
 
     private String getMotivationalMessage(String badgeName) {
@@ -685,6 +625,21 @@ public class QuizAppGUI {
             case "leaderboard": return components.length > 4 ? components[4] : null;
             default: return null;
         }
+    }
+
+    // Helper method to create HTML for images in text components
+    private String createImageHTML(String imagePath, int width, int height) {
+        try {
+            // Convert file path to URL for HTML
+            File imageFile = new File(imagePath);
+            if (imageFile.exists()) {
+                String imageUrl = imageFile.toURI().toString();
+                return "<img src='" + imageUrl + "' width='" + width + "' height='" + height + "'>";
+            }
+        } catch (Exception e) {
+            System.err.println("Could not load image: " + imagePath);
+        }
+        return ""; // Return empty string if image fails to load
     }
 
     private void loadSampleQuestions() {
