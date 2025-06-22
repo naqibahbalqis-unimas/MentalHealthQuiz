@@ -24,14 +24,25 @@ import java.util.*;
 public class GamificationEngine implements RewardSystem {
     private List<User> users = new ArrayList<>(); // stores all users who have taken the quiz
     private List<Badge> availableBadges = new ArrayList<>(); // stores the badges the system can assign (Gold, Silver, Bronze, Keep Learning.)
+    private DatabaseHandler dataManager;
 
     public GamificationEngine() {
+        this("scores.txt");
+    }
+
+    public GamificationEngine(String dataFile) {
         // Use File.separator for cross-platform compatibility
         String basePath = "assets" + File.separator + "badges" + File.separator;
         availableBadges.add(new Badge("Gold", basePath + "Gold.png", 15, "Score 15+ points"));
         availableBadges.add(new Badge("Silver", basePath + "Silver.png", 10, "Score 10–14 points"));
         availableBadges.add(new Badge("Bronze", basePath + "Bronze.png", 5, "Score 5–9 points"));
         availableBadges.add(new Badge("Keep Learning", basePath + "Keep_Learning.png", 0, "Less than 5 points"));
+
+        try {
+            dataManager = new DataManager(dataFile);
+        } catch (DataAccessException e) {
+            System.err.println("Could not initialize data manager: " + e.getMessage());
+        }
     }
 
     public void addUser(User user) {
@@ -43,6 +54,15 @@ public class GamificationEngine implements RewardSystem {
         user.awardPoints(points);
         assignBadge(user);
         updateLeaderboard();
+
+        // Persist the user's score if a data manager is available
+        if (dataManager != null) {
+            try {
+                dataManager.appendScore(user.getTotalPoints());
+            } catch (DataAccessException e) {
+                System.err.println("Failed to save score: " + e.getMessage());
+            }
+        }
     }
 
     private void assignBadge(User user) {
@@ -70,12 +90,37 @@ public class GamificationEngine implements RewardSystem {
      */
     public void updateLeaderboard() {
         users.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
+        persistLeaderboard();
     }
 
     public void showLeaderboard() {
         System.out.println("\n🏆 Final Leaderboard:");
         for (User u : users) {
             System.out.println(u.getName() + " - " + u.getTotalPoints() + " pts - Badge: " + u.getBadgeName());
+        }
+    }
+
+    /**
+     * Persist the current leaderboard ordering to the database file.
+     */
+    private void persistLeaderboard() {
+        if (dataManager == null) return;
+
+        StringBuilder sb = new StringBuilder();
+        int rank = 1;
+        for (User u : users) {
+            sb.append(rank++)
+              .append(",")
+              .append(u.getName())
+              .append(",")
+              .append(u.getTotalPoints())
+              .append("\n");
+        }
+
+        try {
+            dataManager.saveData(sb.toString());
+        } catch (DataAccessException e) {
+            System.err.println("Failed to save leaderboard: " + e.getMessage());
         }
     }
 
