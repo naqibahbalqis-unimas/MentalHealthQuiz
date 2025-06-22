@@ -2,25 +2,35 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// Data management classes
+
 public class QuizModule implements QuestionHandler {
     public List<Question> questions;
     private int currentScore;
     private int totalQuestions;
     private int timeLimit; // in seconds
     private GamificationEngine engine;
+    private DatabaseHandler dataManager;
 
     public QuizModule(int timeLimit) {
+        this(timeLimit, null, null);
+    }
+
+    public QuizModule(int timeLimit, GamificationEngine engine, DatabaseHandler dataManager) {
         this.timeLimit = timeLimit;
+        this.engine = engine;
+        this.dataManager = dataManager;
         this.questions = new ArrayList<>();
         this.currentScore = 0;
     }
 
     // Constructor used by the gamification GUI
     public QuizModule(GamificationEngine engine) {
-        this.engine = engine;
-        this.timeLimit = 0; // default when not used
-        this.questions = new ArrayList<>();
-        this.currentScore = 0;
+        this(0, engine, null);
+    }
+
+    public QuizModule(GamificationEngine engine, DatabaseHandler dataManager) {
+        this(0, engine, dataManager);
     }
 
     public void addQuestion(Question question) {
@@ -41,6 +51,7 @@ public class QuizModule implements QuestionHandler {
                 currentScore += q.getPoints();
             }
         }
+        persistScore();
         return currentScore;
     }
 
@@ -81,5 +92,17 @@ public class QuizModule implements QuestionHandler {
         if (question instanceof MultipleChoiceQuestion) return "MCQ";
         if (question instanceof TrueFalseQuestion) return "True/False";
         return "Unknown";
+    }
+
+    // Save the current score percentage using the data manager if available
+    private void persistScore() {
+        if (dataManager != null && totalQuestions > 0) {
+            int percentage = (int) Math.round(calculateScore());
+            try {
+                dataManager.appendScore(percentage);
+            } catch (DataAccessException e) {
+                System.err.println("Failed to store score: " + e.getMessage());
+            }
+        }
     }
 }
