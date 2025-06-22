@@ -40,8 +40,41 @@ public class GamificationEngine implements RewardSystem {
 
         try {
             dataManager = new DataManager(dataFile);
+            loadLeaderboard();
         } catch (DataAccessException e) {
             System.err.println("Could not initialize data manager: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Load leaderboard data from the underlying file and populate the users list.
+     * This ensures previous quiz attempts persist between application sessions.
+     */
+    private void loadLeaderboard() {
+        if (dataManager == null) return;
+
+        try {
+            String data = dataManager.loadData();
+            if (data == null || data.isEmpty()) return;
+
+            String[] lines = data.split("\n");
+            users.clear();
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                if (parts.length < 3) continue;
+                try {
+                    String name = parts[1].trim();
+                    int points = Integer.parseInt(parts[2].trim());
+                    User u = new User(name, points);
+                    assignBadge(u);
+                    users.add(u);
+                } catch (NumberFormatException ignore) {
+                    // Skip invalid lines
+                }
+            }
+            users.sort((u1, u2) -> u2.getTotalPoints() - u1.getTotalPoints());
+        } catch (DataAccessException e) {
+            System.err.println("Failed to load leaderboard: " + e.getMessage());
         }
     }
 
