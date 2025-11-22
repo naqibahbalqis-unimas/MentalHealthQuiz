@@ -1,0 +1,41 @@
+public class Badge {
+    private String badgeName;
+    private String badgeIconPath;
+    private String requirement;
+    private int requirementPoints;
+
+    public Badge(String badgeName, String badgeIconPath, int requirementPoints, String requirement) {
+        this.badgeName = badgeName;
+        this.badgeIconPath = badgeIconPath;
+        this.requirementPoints = requirementPoints;
+        this.requirement = requirement;
+    }
+
+    public boolean checkRequirement(int userPoints) {
+        return userPoints >= requirementPoints;
+    }
+
+    public String getBadgeInfo() {
+        return badgeName + " - Requires: " + requirement;
+    }
+
+    public void displayBadge() {
+        System.out.println(getBadgeInfo());
+    }
+
+    public String getBadgeName() {
+        return badgeName;
+    }
+
+    public String getBadgeIconPath() {
+        return badgeIconPath;
+    }
+
+    public String getRequirement() {
+        return requirement;
+    }
+
+    public int getRequirementPoints() {
+        return requirementPoints;
+    }
+}
